@@ -14,6 +14,7 @@ app.use("/auth", authRoutes);
 app.use("/issues", issueRoutes);
 app.use("/timeline", timelineRoutes);
 
+
 app.get("/", (req, res) => {
   res.send("CivicBridge Backend Running 🚀");
 });

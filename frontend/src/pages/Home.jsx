@@ -46,7 +46,7 @@ export default function Home() {
           <div className="relative">
             <div className="absolute -inset-4 bg-orange-500/20 blur-3xl rounded-full"></div>
             <img
-              src="https://images.unsplash.com/photo-1599071420790-2c78f167909a?auto=format&fit=crop&q=80&w=800" 
+              src="/banner.png"
               alt="Digital Bridge Illustration"
               className="relative rounded-3xl shadow-2xl border-4 border-white/10"
             />

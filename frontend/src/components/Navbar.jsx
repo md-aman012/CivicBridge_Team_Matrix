@@ -1,10 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 
 export default function Navbar() {
+  const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-[#1f3c5a] text-white shadow-md">
@@ -31,15 +37,38 @@ export default function Navbar() {
 
           {user ? (
             <>
-              <Link
-                to="/dashboard"
-                className="hover:text-orange-300 transition"
-              >
-                Dashboard
-              </Link>
-
+              {user.role === "RESIDENT" && (
+                <>
+                  <Link
+                    to="/issue-feed"
+                    className="hover:text-orange-300 transition"
+                  >
+                    Issue Feed
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    className="hover:text-orange-300 transition"
+                  >
+                    My Issues
+                  </Link>
+                  <Link
+                    to="/create-issue"
+                    className="hover:text-orange-300 transition"
+                  >
+                    Report Issue
+                  </Link>
+                </>
+              )}
+              {user.role === "OFFICIAL" && (
+                <Link
+                  to="/dashboard"
+                  className="hover:text-orange-300 transition"
+                >
+                  Manage Issues
+                </Link>
+              )}
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="bg-orange-500 px-4 py-2 rounded-lg hover:bg-orange-600 transition"
               >
                 Logout
@@ -82,11 +111,26 @@ export default function Navbar() {
 
           {user ? (
             <>
-              <Link to="/dashboard" className="block">
-                Dashboard
-              </Link>
+              {user.role === "RESIDENT" && (
+                <>
+                  <Link to="/issue-feed" className="block">
+                    Issue Feed
+                  </Link>
+                  <Link to="/dashboard" className="block">
+                    My Issues
+                  </Link>
+                  <Link to="/create-issue" className="block">
+                    Report Issue
+                  </Link>
+                </>
+              )}
+              {user.role === "OFFICIAL" && (
+                <Link to="/dashboard" className="block">
+                  Manage Issues
+                </Link>
+              )}
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="w-full text-left"
               >
                 Logout

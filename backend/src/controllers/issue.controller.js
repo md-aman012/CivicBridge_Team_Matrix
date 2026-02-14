@@ -45,9 +45,24 @@ exports.getAllIssues = async (req, res) => {
   }
 };
 
+exports.getIssueById = async (req, res) => {
+  try {
+    const issue = await Issue.findById(req.params.id).populate(
+      "createdBy",
+      "name role"
+    );
+    if (!issue) {
+      return res.status(404).json({ message: "Issue not found" });
+    }
+    res.json(issue);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
-const STATUS_FLOW = {
+
+const OFFICIAL_STATUS_FLOW = {
   SUBMITTED: ISSUE_STATUS.ACKNOWLEDGED,
   ACKNOWLEDGED: ISSUE_STATUS.ASSIGNED,
   ASSIGNED: ISSUE_STATUS.IN_PROGRESS,
@@ -63,7 +78,7 @@ exports.updateIssueStatus = async (req, res) => {
       return res.status(404).json({ message: "Issue not found" });
     }
 
-    const allowedNextStatus = STATUS_FLOW[issue.status];
+    const allowedNextStatus = OFFICIAL_STATUS_FLOW[issue.status];
 
     if (status !== allowedNextStatus) {
       return res.status(400).json({
@@ -82,6 +97,100 @@ exports.updateIssueStatus = async (req, res) => {
 
     res.json({
       message: "Status updated successfully",
+      issue
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Resident (issue creator) can set RESOLVED -> VERIFIED
+exports.verifyIssue = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid issue id" });
+    }
+    const issue = await Issue.findById(id).populate(
+      "createdBy",
+      "_id"
+    );
+    if (!issue) {
+      return res.status(404).json({ message: "Issue not found" });
+    }
+
+    const creatorId =
+      issue.createdBy?._id?.toString() ?? issue.createdBy?.toString();
+    const userId = req.user._id.toString();
+
+    if (creatorId !== userId) {
+      return res.status(403).json({
+        message: "Only the user who raised this issue can verify it"
+      });
+    }
+
+    if (issue.status !== ISSUE_STATUS.RESOLVED) {
+      return res.status(400).json({
+        message: "Only resolved issues can be verified. Current status: " + issue.status
+      });
+    }
+
+    issue.status = ISSUE_STATUS.VERIFIED;
+    await issue.save();
+
+    await IssueTimeline.create({
+      issueId: issue._id,
+      status: ISSUE_STATUS.VERIFIED,
+      updatedBy: "Resident"
+    });
+
+    res.json({
+      message: "Issue marked as verified",
+      issue
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Resident (issue creator) can set RESOLVED -> SUBMITTED (reopen / not satisfied)
+exports.notSatisfiedIssue = async (req, res) => {
+  try {
+    const issue = await Issue.findById(req.params.id).populate(
+      "createdBy",
+      "_id"
+    );
+    if (!issue) {
+      return res.status(404).json({ message: "Issue not found" });
+    }
+
+    const creatorId =
+      issue.createdBy?._id?.toString() ?? issue.createdBy?.toString();
+    const userId = req.user._id.toString();
+
+    if (creatorId !== userId) {
+      return res.status(403).json({
+        message: "Only the user who raised this issue can mark it as not satisfied"
+      });
+    }
+
+    if (issue.status !== ISSUE_STATUS.RESOLVED) {
+      return res.status(400).json({
+        message: "Only resolved issues can be reopened. Current status: " + issue.status
+      });
+    }
+
+    issue.status = ISSUE_STATUS.SUBMITTED;
+    await issue.save();
+
+    await IssueTimeline.create({
+      issueId: issue._id,
+      status: ISSUE_STATUS.SUBMITTED,
+      updatedBy: "Resident"
+    });
+
+    res.json({
+      message: "Issue reopened and visible to everyone",
       issue
     });
   } catch (error) {
