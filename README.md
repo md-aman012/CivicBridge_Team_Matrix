@@ -1,6 +1,7 @@
 ﻿# CivicBridge_Team_Matrix
 
 video link : https://drive.google.com/file/d/1aLpp5f8JYitm-UCIBc7vbyGNRvOo-8A4/view?usp=sharing
+Deployment link : https://civic-bridge-team-matrix.vercel.app/
 
 # 🚀 CivicBridge
 
